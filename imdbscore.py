@@ -5,18 +5,23 @@ from operator import itemgetter
 import sys
 import re
 import os
+import csv
+import logging
 
-def getScore(movieName):
+readDirectory = sys.argv[1]
+outputFile = sys.argv[2]
+
+def getInfo(movieName):
 	try:
 		page = urllib2.urlopen("http://www.imdbapi.com/?t=" + movieName)
 		data = "[" + page.readlines()[0] + "]"
 		obj = json.loads(data)
-		if (len(obj) > 1):
-			return -1;
-		else:
-			return float(obj[0]["Rating"])
+		if (len(obj) > 0):
+                        logging.debug("Retrieved response for: " + movieName)
+                        return obj[0]
 	except:
-		return -1
+                logging.debug("Error getting response for: " + movieName)
+		return None
 
 def clean(name):
 	return urllib.quote(re.sub(r'\([^)]*\)', '', name.strip().replace("."," ")))
@@ -26,9 +31,19 @@ def getMovieNames(folder):
 	return map(lambda x:urllib.quote(x), lst)
 
 def process(folder):
-	return sorted(map(lambda x:[x, getScore(x)], getMovieNames(folder)), key=itemgetter(1))
+        movieNames = getMovieNames(folder)
+        infos = [info for info in map(lambda movieName: getInfo(movieName), movieNames) if info != None]
+        lst = []
+        i = 0
+        
+        for info in infos:
+                try:
+                        lst.append([movieNames[i], info["Title"], float(info["Rating"]), info["Genre"], info["Runtime"]])
+                except:
+                        logging.warn("Error parsing response for: " + movieNames[i])
+                i += 1
+        return lst
 
-results = process("E:\[MOVIES]\[UNSORTED]")
-
-for r in results:
-	print (str(r[1]) + "\t" + str(r[0]))
+results = process(readDirectory)
+writer = csv.writer(open(outputFile, 'wb'), delimiter=';', quotechar='|',quoting=csv.QUOTE_MINIMAL)                                
+map(lambda row:writer.writerow(row), results)

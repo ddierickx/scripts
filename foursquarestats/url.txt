@@ -1,0 +1,1 @@
+https://api.foursquare.com/v2/venues/search?ll=51.048301,3.74221&query=colruyt&oauth_token=KJWFAL4U22421FMRRE4OQ4K0NHVBYCUGS2TTGMW4F1KZNSRE

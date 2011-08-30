@@ -8,6 +8,7 @@ import os
 import csv
 import logging
 
+print "test"
 readDirectory = sys.argv[1]
 outputFile = sys.argv[2]
 
@@ -37,10 +38,12 @@ def process(folder):
         i = 0
         
         for info in infos:
+                unquotedMovieName = urllib.unquote(movieNames[i])
+                                           
                 try:
-                        lst.append([movieNames[i], info["Title"], float(info["Rating"]), info["Genre"], info["Runtime"]])
+                        lst.append([unquotedMovieName, info["Title"], float(info["Rating"]), info["Genre"], info["Runtime"]])
                 except:
-                        logging.warn("Error parsing response for: " + movieNames[i])
+                        logging.warn("Error parsing response for: " + unquotedMovieName)
                 i += 1
         return lst
 

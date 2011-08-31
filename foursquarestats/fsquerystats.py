@@ -4,6 +4,7 @@ import httplib2
 import time
 import csv
 import datetime
+import traceback
 
 FS_API_URL = "https://api.foursquare.com/v2/"
 LOCATIONS = ["51.006842,3.740845", "50.765128,3.876801", "51.223228,4.435730"]
@@ -43,22 +44,22 @@ def get_venues_union(venues_lst):
 	
 def gather_stats(query, locations, out_file, fs_token):
 		#Round datetime to nearest 15 minutes
-		t_now = DT.now()
+		t_now = datetime.datetime.now()
 		t_rounded = t_now - datetime.timedelta(minutes = t_now.minute % 15, seconds = t_now.second, microseconds = t_now.microsecond)
 				
-		t = time.strftime("%Y-%m-%d %H:%M:%S", t_rounded)
+		t = time.strftime("%Y-%m-%d %H:%M:%S")
 		
 		results =  csv.writer(open(out_file, 'ab+'), delimiter=';', quotechar='|', dialect='excel')
-		responses = map(lambda ll:get_venues(ll, query), locations)		
+		responses = map(lambda ll:get_venues(ll, query, fs_token), locations)		
 		venues = get_venues_union(responses)
 		
 		c = 0
 		
 		for venue in venues:
 			c += int(venues[venue]["venue_checkins"])
-			results.writerow([t, venues[venue]["id"], venues[venue]["venue_name"], venues[venue]["venue_city"], venues[venue]["venue_checkins"]])
+			results.writerow([t_rounded, venues[venue]["id"], venues[venue]["venue_name"], venues[venue]["venue_city"], venues[venue]["venue_checkins"]])
 		
-		print "Ticked @ " + t + ", total checkins: " + c
+		print "Ticked @ " + str(t_rounded) + ", total checkins: " + str(c)
 		
 def run_gather_stats(query, delay, locations, out_file, fs_token):
 	while (1 > 0):
@@ -66,6 +67,7 @@ def run_gather_stats(query, delay, locations, out_file, fs_token):
 			gather_stats(query, locations, out_file, fs_token)
 		except Exception:
 			print "Oops, something went wrong..."
+			traceback.print_stack()
 			print sys.exc_info()[1]
 		time.sleep(delay)
 		

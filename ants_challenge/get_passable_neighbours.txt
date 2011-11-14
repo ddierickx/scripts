@@ -1,0 +1,13 @@
+    def get_passable_neighbours(self, ants, loc, n):
+        def get_passable_neighbours_helper(neighbours, visited, loc, n):
+            if (n == 0):
+                return set()
+            else:
+                for direction in MyBot.DIRECTIONS:
+                    neighbour = ants.destination(loc, direction)
+                    if (ants.passable(neighbour)) and (neighbour not in visited):
+                        visited.add(neighbour)
+                        neighbours.add(neighbour)
+                        neighbours = neighbours.union(get_passable_neighbours_helper(neighbours, visited, neighbour, n - 1))
+                    
+        return get_passable_neighbours_helper(set(), set(), loc, n)

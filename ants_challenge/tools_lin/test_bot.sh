@@ -1,0 +1,1 @@
+./playgame.py --engine_seed 42 --player_seed 42 --food random --end_wait=0.25 --verbose --log_dir game_logs --turns 30 --map_file maps/maze/maze_02p_01.map "$1" "python ../MyBot.py" --nolaunch -e --strict --capture_errors

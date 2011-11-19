@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from ants import *
-from decimal import *
 import logging
 
 class MyBot:
@@ -9,6 +8,7 @@ class MyBot:
 
     def __init__(self):
         logging.basicConfig(filename='mybot.log',level=logging.DEBUG)
+        self.food = set()
 
     def do_setup(self, ants):
         self.init_world(ants)
@@ -16,8 +16,8 @@ class MyBot:
     def init_world(self, ants):
 	self.world = {}
 
-        for x in range(ants.cols):
-            for y in range(ants.rows):
+        for x in xrange(ants.cols):
+            for y in xrange(ants.rows):
                 self.world[(y, x)] = {}
 
 		if (not ants.passable((y, x))):
@@ -32,16 +32,36 @@ class MyBot:
                 self.world[(y, x)][MyBot.EVADE_FRIENDLY_ANT] = val
 
     def update_world_food(self, ants, val):
+        new_food = set()
+
+        for food_loc in self.food:
+            if (self.has_food(ants, food_loc)):
+                new_food.add(food_loc)
+        
         for food_loc in ants.food():
+            new_food.add(food_loc)
+
+        self.food = new_food
+        
+        for food_loc in self.food:
             self.diffuse(ants, food_loc, MyBot.FOOD, val)
+
+    def update_enemy_hills(self, ants, val):
+        # Note: hill_loc is tuple of (loc, player)
+        for hill_loc in ants.enemy_hills():
+            self.diffuse(ants, hill_loc[0], MyBot.ATTACK, val)
 
     def evade_friendly_hills(self, ants, val):
         for hill_loc in ants.my_hills():
             self.diffuse(ants, hill_loc, MyBot.EVADE_FRIENDLY_HILL, val)
 
     def evade_friendly_ants(self, ants, val):
-        for hill_loc in ants.my_ants():
-            self.diffuse(ants, hill_loc, MyBot.EVADE_FRIENDLY_ANT, val)
+        for ant_loc in ants.my_ants():
+            self.diffuse(ants, ant_loc, MyBot.EVADE_FRIENDLY_ANT, val)
+
+    def has_food(self, ants, loc):
+        row, col = loc
+        return ants.map[row][col] == FOOD
 
     def diffuse(self, ants, source, goal, score):
         open_nodes = []
@@ -57,14 +77,15 @@ class MyBot:
         
         while (len(open_nodes) > 0):
             current_node = open_nodes[0]
-
-            if (distances[current_node] > 25):
+            current_score = score / (distances[current_node] + 1)
+           
+            if (current_score == 0):
                 break
 
             open_set.remove(current_node)
             open_nodes.remove(current_node)
             closed_set.add(current_node)
-            current_score = score / (distances[current_node] + 1)
+            
             self.world[current_node][goal] += current_score
 
             for direction in MyBot.DIRECTIONS:
@@ -75,38 +96,37 @@ class MyBot:
                     open_nodes.append(destination)
                     open_set.add(destination)
 
+    def get_score(self, loc):
+        return reduce(lambda x, y: x + y, map(lambda x:self.world[loc][x], self.world[loc].keys()))
+
     def do_turn(self, ants):
         logging.info("Starting turn!")
         self.init_world(ants)
-        self.update_world_food(ants, 1024)
-        self.evade_friendly_hills(ants, -20)
-        self.evade_friendly_ants(ants, -10)
-        
-        all_orders = []
-        
-        for ant in ants.my_ants():
-            best_direction = MyBot.DIRECTIONS[0]
-            best_value = -1
-            for direction in MyBot.DIRECTIONS:
-                destination = ants.destination(ant, direction)
+        self.update_world_food(ants, 250)
+        #self.evade_friendly_hills(ants, -1000)
+        #self.evade_friendly_ants(ants, -100)
+        self.update_enemy_hills(ants, 1024)
 
-                if (self.world[destination][MyBot.FOOD] > best_value):
-                    best_value = self.world[destination][MyBot.FOOD] + self.world[destination][MyBot.ATTACK] + self.world[destination][MyBot.SCOUT] + self.world[destination][MyBot.EVADE_FRIENDLY_HILL] + self.world[destination][MyBot.EVADE_FRIENDLY_ANT]
-                    best_direction = direction
-
-            all_orders.append((ant, best_direction))
-            
-                
         #Ignore duplicate orders (different ants ordered to the same location and multiple orders to same ant)
         new_locations = set()
         
-        for order in all_orders:
-            destination = ants.destination(order[0], order[1])
-            
-            if (not destination in new_locations):
-                new_locations.add(destination)
-                ants.issue_order((order[0], order[1]))
+        for ant in ants.my_ants():
+            best_destination = None
+            best_direction = MyBot.DIRECTIONS[0]
+            best_value = -30000
+            for direction in MyBot.DIRECTIONS:
+                destination = ants.destination(ant, direction)
+                score = self.get_score(destination)
+                
+                if (score > best_value):
+                    best_value = score
+                    best_direction = direction
+                    best_destination = destination
 
+            if (best_destination not in new_locations):
+                new_locations.add(best_destination)
+                ants.issue_order((ant, best_direction))
+        
 	logging.info("Turn ended!")
 
     def pprint(self, ants, world_dict, order):

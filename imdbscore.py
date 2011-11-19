@@ -8,7 +8,6 @@ import os
 import csv
 import logging
 
-print "test"
 readDirectory = sys.argv[1]
 outputFile = sys.argv[2]
 

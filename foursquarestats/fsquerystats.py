@@ -7,10 +7,10 @@ import datetime
 import traceback
 
 FS_API_URL = "https://api.foursquare.com/v2/"
-LOCATIONS = ["51.006842,3.740845", "50.765128,3.876801", "51.223228,4.435730"]
+LOCATIONS = []
 
-def get_access_token():
-	return open('token.txt', 'r').read()
+def get_access_token(token_file):
+	return open(token_file, 'r').read()
 
 def get_venues(ll, query, fs_token):
 		h = httplib2.Http()
@@ -75,28 +75,24 @@ def run(args):
 	cur_arg = "command"
 	
 	try:
-		cmd = args[0]
 		cur_arg = "query"
-		query = args[1]
+		query = args[0]
 		cur_arg = "delay"
-		delay = int(args[2]) * 60
+		delay = int(args[1]) * 60
 		cur_arg = "token file"
-		fs_token_file = args[3]
+		fs_token_file = args[2]
 		cur_arg = "locations file"
-		locations_file = args[4]
+		locations_file = args[3]
 		cur_arg = "out file"
-		out_file = args[5]
+		out_file = args[4]
 		cur_arg = "args ok"
 		
-		fs_token = open(fs_token_file, "r").read()
+		fs_token = get_access_token(fs_token_file)
 		print "Token = " + fs_token
 		locations = open(locations_file, "r").read().split("\n")
 		print "Locations: " + str(len(locations))
 	
-		if (cmd == "gather"):
-			run_gather_stats(query, delay, locations, out_file, fs_token)
-		elif (cmd == "summarize"):
-			print "Implement me"
+		run_gather_stats(query, delay, locations, out_file, fs_token)
 	
 	except Exception:
 		print "Something went wrong while parsing arguments."

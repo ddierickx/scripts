@@ -2,6 +2,8 @@ from time import mktime
 import datetime
 import time
 import csv
+import sys
+import os
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import dates
@@ -48,7 +50,7 @@ def run(file_in, file_out):
         day_y[dt.weekday()] += results[kv]
 	out.writerow([time.strftime("%Y-%m-%d %H:%M:%S", kv), results[kv]])
 
-    open("dayhours.txt", "wb").write(str(dayhours))
+    #open("dayhours.txt", "wb").write(str(dayhours))
 
     def format_date(x, pos):
         return datetime.datetime.fromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S')
@@ -57,7 +59,7 @@ def run(file_in, file_out):
 
     
 
-    def plot_weekday(title, weekdayno):
+    def plot_weekday(folder, title, weekdayno):
         N = 24
         ind = np.arange(N)
         width = 0.40
@@ -77,7 +79,35 @@ def run(file_in, file_out):
         #ax.xaxis.set_major_locator(quarters)
         #ax.xaxis.set_major_formatter(monthsFmt)
         fig.suptitle(title)
-        fig.savefig(title)
+	f = os.path.join(folder, title)
+        fig.savefig(f)
+
+    def plot_allinone(folder):
+        N = 24
+        ind = np.arange(N)
+        width = 0.40
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        
+        for dayhour in dayhours:
+            ax.plot(range(0, 24), dayhour)
+            leg = ax.legend(days)
+
+        ax.set_xticklabels(range(0, 24))
+        ax.set_xticks(ind+(width / 2))
+
+        for label in ax.get_xticklabels():
+            label.set_rotation('horizontal')
+
+        plt.ylabel("Checkins")
+        plt.xlabel("Hour")
+        plt.ylim((0,500))
+        
+        #ax.xaxis.set_major_locator(quarters)
+        #ax.xaxis.set_major_formatter(monthsFmt)
+        fig.suptitle("All")
+	f = os.path.join(folder, "AllInOne")
+        fig.savefig(f)
 
     def plot_all():
         fig = plt.figure()
@@ -90,7 +120,7 @@ def run(file_in, file_out):
         fig.autofmt_xdate()
         fig.savefig("all")
 
-    def plot_weekdays():
+    def plot_weekdays(folder):
         N = 7
         ind = np.arange(N)
         width = 0.40
@@ -106,15 +136,20 @@ def run(file_in, file_out):
         #ax.xaxis.set_major_locator(quarters)
         #ax.xaxis.set_major_formatter(monthsFmt)
         ax.autoscale_view()
-        plt.show()
+        f = os.path.join(folder, "all")
+        fig.savefig(f)
 
-    plot_weekday('Mondays', 0)
-    plot_weekday('Tuesdays', 1)
-    plot_weekday('Wednesdays', 2)
-    plot_weekday('Thursdays', 3)
-    plot_weekday('Fridays', 4)
-    plot_weekday('Saturdays', 5)
-    #plot_weekdays()
+    # use output dir
+    folder = os.path.dirname(file_out)
+    plot_weekday(folder, 'Mondays', 0)
+    plot_weekday(folder, 'Tuesdays', 1)
+    plot_weekday(folder, 'Wednesdays', 2)
+    plot_weekday(folder, 'Thursdays', 3)
+    plot_weekday(folder, 'Fridays', 4)
+    plot_weekday(folder, 'Saturdays', 5)
+    plot_weekday(folder, 'Sundays', 6)
+    plot_allinone(folder)
+    plot_weekdays(folder)
 
 def autolabel(rects):
     # attach some text labels
@@ -127,4 +162,4 @@ def gettimestamp(dt):
     return mktime(dt)
 
 
-run("out.csv", "out_summarized.csv")
+run(sys.argv[1], sys.argv[2])

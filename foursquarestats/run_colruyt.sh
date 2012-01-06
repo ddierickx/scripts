@@ -1,2 +1,2 @@
 #!/bin/bash
-python fsquerystats.py gather colruyt 15 token.txt colruyt_locations.txt out.csv
+python fsquerystats.py colruyt 15 colruyt_data/token.txt colruyt_data/colruyt_locations.txt colruyt_data/queryresults.csv
